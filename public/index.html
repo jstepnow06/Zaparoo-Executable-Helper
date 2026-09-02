@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zaparoo Drive Launcher</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">Z</span><span>Zaparoo <strong>Drive Launcher</strong></span></div>
+      <div id="connection" class="connection"><span class="status-dot"></span> Local helper</div>
+    </header>
+
+    <section class="intro">
+      <p class="eyebrow">External drive setup</p>
+      <h1>Make an executable<br><em>ready to zap.</em></h1>
+      <p class="lede">Choose an app from an external drive. This helper creates the launcher files beside it and registers the launcher with Zaparoo.</p>
+    </section>
+
+    <section class="workspace" aria-label="Executable setup">
+      <div class="selector-panel">
+        <div class="step-label"><span>01</span> Select executable</div>
+        <button id="pickButton" class="pick-button" type="button">
+          <span class="button-icon">+</span><span id="pickLabel">Browse for an .exe</span><span class="arrow">&#8599;</span>
+        </button>
+        <div id="selectedFile" class="selected-file empty">No executable selected</div>
+        <p class="hint">The file picker can browse mounted USB and external drives.</p>
+      </div>
+
+      <div class="preview-panel">
+        <div class="step-label"><span>02</span> Files to be created</div>
+        <div class="file-list">
+          <div class="file-row"><span class="file-icon bat">BAT</span><div><strong id="batName">zaparoo-launch-[app].bat</strong><small>Changes directory and starts the app</small></div><span class="file-check">&#10003;</span></div>
+          <div class="file-row"><span class="file-icon txt">TXT</span><div><strong>zaparoo.txt</strong><small>Contains the execute token for scanning</small></div><span class="file-check">&#10003;</span></div>
+          <div class="file-row"><span class="file-icon toml">CFG</span><div><strong>config.toml</strong><small>Adds the launcher to allow_execute</small></div><span class="file-check">&#10003;</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="action-bar">
+      <div><span class="lock">&#9679;</span> Writes stay on this computer</div>
+      <button id="createButton" class="create-button" type="button" disabled>Create launcher <span>&#8594;</span></button>
+    </section>
+    <div id="message" class="message" role="status" aria-live="polite"></div>
+    <footer><span>CONFIG TARGET</span> <strong id="configPath">Detecting...</strong></footer>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
