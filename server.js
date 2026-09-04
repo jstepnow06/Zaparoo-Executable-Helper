@@ -21,11 +21,17 @@ function tomlQuote(value) {
 }
 
 function allowExecutePattern(filePath) {
-  return `^${filePath.replace(/\\/g, '\\\\').replace(/\./g, '\\.')}$`;
+  const escapedPath = filePath.replace(/\\/g, '\\\\').replace(/\./g, '\\.');
+  const driveIndependentPath = escapedPath.replace(/^[A-Za-z]:\\\\/, '[A-Za-z]:\\\\');
+  return `^${driveIndependentPath}$`;
 }
 
-function findAllowExecuteArray(config) {
-  const keyMatch = /(?:^|\n)([ \t]*)allow_execute[ \t]*=[ \t]*\[/m.exec(config);
+function allowFilePattern(filePath) {
+  return allowExecutePattern(filePath);
+}
+
+function findConfigArray(config, key) {
+  const keyMatch = new RegExp(`(?:^|\\n)([ \\t]*)${key}[ \\t]*=[ \\t]*\\[`, 'm').exec(config);
   if (!keyMatch) return null;
 
   const openingIndex = config.indexOf('[', keyMatch.index + keyMatch[0].length - 1);
@@ -52,15 +58,19 @@ function findAllowExecuteArray(config) {
 }
 
 function addAllowedPath(config, executablePath) {
-  const array = findAllowExecuteArray(config);
+  const array = findConfigArray(config, 'allow_file');
   if (!array) {
-    throw new Error('Could not find the existing allow_execute array in config.toml.');
+    const separator = config.endsWith('\n') ? '' : '\n';
+    return {
+      config: `${config}${separator}\n[launchers]\nallow_file = [\n    ${tomlQuote(allowFilePattern(executablePath))}\n]\n`,
+      added: true,
+    };
   }
 
   const arrayText = config.slice(array.openingIndex + 1, array.closingIndex);
   const existingPaths = [...arrayText.matchAll(/"((?:\\.|[^"\\])*)"/g)]
     .map((match) => match[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\'));
-  const expectedPattern = allowExecutePattern(executablePath);
+  const expectedPattern = allowFilePattern(executablePath);
   if (existingPaths.some((entry) => entry.toLowerCase() === expectedPattern.toLowerCase())) {
     return { config, added: false };
   }
@@ -115,11 +125,12 @@ function createArtifacts(executablePath) {
   const executableDirectory = path.dirname(executablePath);
   const executableName = path.basename(executablePath, path.extname(executablePath));
   const batPath = path.join(executableDirectory, `zaparoo-launch-${executableName}.bat`);
-  const zaparooPath = path.join(executableDirectory, 'zaparoo.txt');
+  const driveRoot = path.parse(executablePath).root;
+  const zaparooPath = path.join(driveRoot, 'zaparoo.txt');
   const bundledUtility = path.join(executableDirectory, 'app', 'jackbox_patcher.exe');
   const launchPath = fs.existsSync(bundledUtility) ? 'app\\jackbox_patcher.exe' : path.basename(executablePath);
-  const batContents = `@echo off\r\nexplorer.exe "%~dp0${launchPath}"\r\n`;
-  const tokenContents = `**execute:${batPath}`;
+  const batContents = `@echo off\r\nsetlocal\r\npushd "%~dp0"\r\n"%~dp0${launchPath}"\r\nset "exitCode=%errorlevel%"\r\npopd\r\nexit /b %exitCode%\r\n`;
+  const tokenContents = path.relative(driveRoot, batPath).replace(/\\/g, '/');
   const originalConfig = fs.readFileSync(CONFIG_PATH, 'utf8');
   const updated = addAllowedPath(originalConfig, batPath);
 
