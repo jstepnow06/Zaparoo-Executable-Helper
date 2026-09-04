@@ -87,6 +87,34 @@ function addAllowedPath(config, executablePath) {
   };
 }
 
+function createSetupScript(launcherRelativePath) {
+  const escapedLauncherPath = launcherRelativePath.replace(/'/g, "''");
+  return `@echo off\r\nsetlocal\r\npowershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0zaparoo-setup.ps1" -LauncherRelativePath "${escapedLauncherPath}"\r\nif errorlevel 1 pause\r\n`;
+}
+
+/* function createSetupPowerShell() {
+  return `param(\r\n  [Parameter(Mandatory = $true)]\r\n  [string]$LauncherRelativePath\r\n)\r\n\r\n$configPath = Join-Path $env:LOCALAPPDATA 'zaparoo\\config.toml'\r\nif (-not (Test-Path -LiteralPath $configPath)) { throw \"Zaparoo config not found at $configPath\" }\r\n$config = Get-Content -LiteralPath $configPath -Raw\r\n$driveLetter = $LauncherRelativePath.Substring(0, 1)\r\n$launcherPath = \"$driveLetter:\\$($LauncherRelativePath.Replace('/', '\\').TrimStart('\\'))\"\r\n$escapedPath = [regex]::Escape($launcherPath)\r\n$allowPattern = \"^[A-Za-z]:\\\\$([regex]::Escape($LauncherRelativePath.Substring(3).Replace('/', '\\')))\$\"\r\n\r\n$backupPath = \"$configPath.$(Get-Date -Format yyyyMMdd-HHmmss).bak\"\r\nCopy-Item -LiteralPath $configPath -Destination $backupPath\r\n\r\nif ($config -notmatch '(?m)^\\[readers\\.drivers\\.externaldrive\\]') {\r\n  $config += \"`r`n`r`n[readers.drivers.externaldrive]`r`nenabled = true`r`n\"\r\n} elseif ($config -notmatch '(?ms)\\[readers\\.drivers\\.externaldrive\\].*?^enabled\\s*=\\s*true') {\r\n  $config = [regex]::Replace($config, '(?m)(^\\[readers\\.drivers\\.externaldrive\\]\\s*$)', \"`$1`r`nenabled = true\")\r\n}\r\n\r\nif ($config -notmatch '(?m)^\\[launchers\\]') {\r\n  $config += \"`r`n`r`n[launchers]`r`nallow_file = [`\"$allowPattern`\"]`r`n\"\r\n} elseif ($config -notmatch [regex]::Escape($allowPattern)) {\r\n  $config += \"`r`nallow_file = [`\"$allowPattern`\"]`r`n\"\r\n}\r\n\r\nSet-Content -LiteralPath $configPath -Value $config -Encoding utf8\r\nWrite-Host \"Zaparoo configured for $launcherPath\"\r\nWrite-Host \"Backup: $backupPath\"\r\n$zaparoo = Get-Command Zaparoo.exe -ErrorAction SilentlyContinue\r\nif ($zaparoo) { Start-Process -FilePath $zaparoo.Source -ArgumentList '-reload' -Wait } else { Write-Host 'Reload Zaparoo from its system-tray menu.' }\r\n`;
+  return `param(\r\n  [Parameter(Mandatory = $true)]\r\n  [string]$LauncherRelativePath\r\n)\r\n\r\n$configPath = Join-Path $env:LOCALAPPDATA 'zaparoo\\config.toml'\r\nif (-not (Test-Path -LiteralPath $configPath)) { throw \"Zaparoo config not found at $configPath\" }\r\n$config = Get-Content -LiteralPath $configPath -Raw\r\n$relativePath = $LauncherRelativePath.Replace('/', '\\').TrimStart('\\')\r\n$launcherPath = Join-Path ([IO.Path]::GetPathRoot($PSScriptRoot)) $relativePath\r\n$regexPath = $relativePath.Replace('\\', '\\\\').Replace('.', '\\.')\r\n$allowPattern = \"^[A-Za-z]:\\\\$regexPath$\"\r\n\r\n$backupPath = \"$configPath.$(Get-Date -Format yyyyMMdd-HHmmss).bak\"\r\nCopy-Item -LiteralPath $configPath -Destination $backupPath\r\n\r\nif ($config -notmatch '(?m)^\\[readers\\.drivers\\.externaldrive\\]') {\r\n  $config += \"`r`n`r`n[readers.drivers.externaldrive]`r`nenabled = true`r`n\"\r\n} elseif ($config -notmatch '(?ms)\\[readers\\.drivers\\.externaldrive\\].*?^enabled\\s*=\\s*true') {\r\n  $config = [regex]::Replace($config, '(?m)(^\\[readers\\.drivers\\.externaldrive\\]\\s*$)', \"`$1`r`nenabled = true\")\r\n}\r\n\r\nif ($config -notmatch '(?m)^\\[launchers\\]') {\r\n  $config += \"`r`n`r`n[launchers]`r`nallow_file = ['\"$allowPattern\"']`r`n\"\r\n} elseif ($config -notmatch '(?m)^allow_file\\s*=') {\r\n  $config = [regex]::Replace($config, '(?m)(^\\[launchers\\]\\s*$)', \"`$1`r`nallow_file = ['\"$allowPattern\"']\")\r\n} elseif ($config -notmatch [regex]::Escape($allowPattern)) {\r\n  $config = [regex]::Replace($config, '(?ms)(^allow_file\\s*=\\s*\\[).*?(^\\])', \"`$1`r`n    '$allowPattern'`r`n`$2\")\r\n}\r\n\r\nSet-Content -LiteralPath $configPath -Value $config -Encoding utf8\r\nWrite-Host \"Zaparoo configured for $launcherPath\"\r\nWrite-Host \"Backup: $backupPath\"\r\n$zaparoo = Get-Command Zaparoo.exe -ErrorAction SilentlyContinue\r\nif ($zaparoo) { Start-Process -FilePath $zaparoo.Source -ArgumentList '-reload' -Wait } else { Write-Host 'Reload Zaparoo from its system-tray menu.' }\r\n`;
+}
+
+*/
+
+/* function createSetupPowerShell() {
+  return `param(\r\n  [Parameter(Mandatory = $true)]\r\n  [string]$LauncherRelativePath\r\n)\r\n\r\n$configPath = Join-Path $env:LOCALAPPDATA 'zaparoo\\config.toml'\r\nif (-not (Test-Path -LiteralPath $configPath)) { throw \"Zaparoo config not found at $configPath\" }\r\n$config = Get-Content -LiteralPath $configPath -Raw\r\n$relativePath = $LauncherRelativePath.Replace('/', '\\').TrimStart('\\')\r\n$launcherPath = Join-Path ([IO.Path]::GetPathRoot($PSScriptRoot)) $relativePath\r\n$regexPath = $relativePath.Replace('\\', '\\\\').Replace('.', '\\.')\r\n$allowPattern = \"^[A-Za-z]:\\\\$regexPath$\"\r\n\r\n$backupPath = \"$configPath.$(Get-Date -Format yyyyMMdd-HHmmss).bak\"\r\nCopy-Item -LiteralPath $configPath -Destination $backupPath\r\n\r\nif ($config -notmatch '(?m)^\\[readers\\.drivers\\.externaldrive\\]') {\r\n  $config += \"`r`n`r`n[readers.drivers.externaldrive]`r`nenabled = true`r`n\"\r\n} elseif ($config -notmatch '(?ms)\\[readers\\.drivers\\.externaldrive\\].*?^enabled\\s*=\\s*true') {\r\n  $config = [regex]::Replace($config, '(?m)(^\\[readers\\.drivers\\.externaldrive\\]\\s*$)', \"`$1`r`nenabled = true\")\r\n}\r\n\r\nif ($config -notmatch '(?m)^\\[launchers\\]') {\r\n  $config += \"`r`n`r`n[launchers]`r`nallow_file = ['$allowPattern']`r`n\"\r\n} elseif ($config -notmatch '(?m)^allow_file\\s*=') {\r\n  $config = [regex]::Replace($config, '(?m)(^\\[launchers\\]\\s*$)', \"`$1`r`nallow_file = ['$allowPattern']\")\r\n} elseif ($config -notmatch [regex]::Escape($allowPattern)) {\r\n  $config = [regex]::Replace($config, '(?ms)(^allow_file\\s*=\\s*\\[).*?(^\\])', \"`$1`r`n    '$allowPattern'`r`n`$2\")\r\n}\r\n\r\nSet-Content -LiteralPath $configPath -Value $config -Encoding utf8\r\nWrite-Host \"Zaparoo configured for $launcherPath\"\r\nWrite-Host \"Backup: $backupPath\"\r\n$zaparoo = Get-Command Zaparoo.exe -ErrorAction SilentlyContinue\r\nif ($zaparoo) { Start-Process -FilePath $zaparoo.Source -ArgumentList '-reload' -Wait } else { Write-Host 'Reload Zaparoo from its system-tray menu.' }\r\n`;
+}
+
+*/
+
+/* function createSetupPowerShell() {
+  return `param([Parameter(Mandatory = $true)][string]$LauncherRelativePath)\r\n$configPath = Join-Path $env:LOCALAPPDATA 'zaparoo\\config.toml'\r\nif (-not (Test-Path -LiteralPath $configPath)) { throw \"Zaparoo config not found at $configPath\" }\r\n$config = Get-Content -LiteralPath $configPath -Raw\r\n$relativePath = $LauncherRelativePath.Replace('/', '\\').TrimStart('\\')\r\n$root = [IO.Path]::GetPathRoot($PSScriptRoot)\r\n$launcherPath = Join-Path $root $relativePath\r\n$regexPath = $relativePath.Replace('\\', '\\\\').Replace('.', '\\.')\r\n$allowPattern = \"^[A-Za-z]:\\\\$regexPath$\"\r\n$backupPath = \"$configPath.$(Get-Date -Format yyyyMMdd-HHmmss).bak\"\r\nCopy-Item -LiteralPath $configPath -Destination $backupPath\r\n$newline = [Environment]::NewLine\r\nif ($config -notmatch '(?m)^\\[readers\\.drivers\\.externaldrive\\]') { $config += $newline + $newline + '[readers.drivers.externaldrive]' + $newline + 'enabled = true' + $newline } elseif ($config -notmatch '(?ms)\\[readers\\.drivers\\.externaldrive\\].*?^enabled\\s*=\\s*true') { $config = [regex]::Replace($config, '(?m)(^\\[readers\\.drivers\\.externaldrive\\]\\s*$)', \"`$1$newline`nenabled = true\") }\r\nif ($config -notmatch '(?m)^\\[launchers\\]') { $config += $newline + $newline + '[launchers]' + $newline + \"allow_file = ['$allowPattern']\" + $newline } elseif ($config -notmatch '(?m)^allow_file\\s*=') { $config = [regex]::Replace($config, '(?m)(^\\[launchers\\]\\s*$)', \"`$1$newline`nallow_file = ['$allowPattern']\") } elseif ($config -notmatch [regex]::Escape($allowPattern)) { $config = [regex]::Replace($config, '(?ms)(^allow_file\\s*=\\s*\\[).*?(^\\])', \"`$1$newline    '$allowPattern'$newline`$2\") }\r\nSet-Content -LiteralPath $configPath -Value $config -Encoding utf8\r\nWrite-Host \"Zaparoo configured for $launcherPath\"\r\nWrite-Host \"Backup: $backupPath\"\r\n$zaparoo = Get-Command Zaparoo.exe -ErrorAction SilentlyContinue\r\nif ($zaparoo) { Start-Process -FilePath $zaparoo.Source -ArgumentList '-reload' -Wait } else { Write-Host 'Reload Zaparoo from its system-tray menu.' }\r\n`;
+}
+
+*/
+
+function createSetupPowerShell() {
+  return fs.readFileSync(path.join(__dirname, 'setup-template.ps1'), 'utf8');
+}
+
 function writeFilesWithElevation(files) {
   const payloadPath = path.join(os.tmpdir(), `zaparoo-drive-launcher-${process.pid}-${Date.now()}.json`);
   fs.writeFileSync(payloadPath, JSON.stringify({ files }), 'utf8');
@@ -127,21 +155,26 @@ function createArtifacts(executablePath) {
   const batPath = path.join(executableDirectory, `zaparoo-launch-${executableName}.bat`);
   const driveRoot = path.parse(executablePath).root;
   const zaparooPath = path.join(driveRoot, 'zaparoo.txt');
+  const launcherRelativePath = path.relative(driveRoot, batPath).replace(/\\/g, '/');
+  const setupBatPath = path.join(driveRoot, 'zaparoo-setup.bat');
+  const setupPowerShellPath = path.join(driveRoot, 'zaparoo-setup.ps1');
   const bundledUtility = path.join(executableDirectory, 'app', 'jackbox_patcher.exe');
   const launchPath = fs.existsSync(bundledUtility) ? 'app\\jackbox_patcher.exe' : path.basename(executablePath);
   const batContents = `@echo off\r\nsetlocal\r\npushd "%~dp0"\r\n"%~dp0${launchPath}"\r\nset "exitCode=%errorlevel%"\r\npopd\r\nexit /b %exitCode%\r\n`;
-  const tokenContents = path.relative(driveRoot, batPath).replace(/\\/g, '/');
+  const tokenContents = launcherRelativePath;
   const originalConfig = fs.readFileSync(CONFIG_PATH, 'utf8');
   const updated = addAllowedPath(originalConfig, batPath);
 
   const files = [
     { path: batPath, contents: batContents },
     { path: zaparooPath, contents: tokenContents },
+    { path: setupBatPath, contents: createSetupScript(launcherRelativePath) },
+    { path: setupPowerShellPath, contents: createSetupPowerShell() },
   ];
   if (updated.added) files.push({ path: CONFIG_PATH, contents: updated.config });
   const elevated = writeArtifactFiles(files);
 
-  return { executablePath, batPath, zaparooPath, configPath: CONFIG_PATH, addedToConfig: updated.added, elevated };
+  return { executablePath, batPath, zaparooPath, setupBatPath, configPath: CONFIG_PATH, addedToConfig: updated.added, elevated };
 }
 
 function chooseExecutable() {
